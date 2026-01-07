@@ -3,7 +3,7 @@
 make clean
 make
 make test
-make benchmark
+make clean
 
 
 

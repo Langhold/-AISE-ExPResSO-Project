@@ -15,7 +15,8 @@ all: $(OBJECTS)
 $(OBJECTS): $(wildcard *.h)
 
 clean:
-	rm -f *.o libexpresso.* *.dSYM
+	rm -f *.o libexpresso.*
+	rm -rf *.dSYM
 	$(MAKE) -C tests clean
 	$(MAKE) -C benchmarks clean
 

@@ -162,10 +162,17 @@ int expresso_weighted_task(void (* work) (void *), void * data, unsigned int wei
 
 int expresso_wait(void){
 	size_t nb_threads = expresso_worker_count();
-	/* if nb_threads=0, makes the execution sequential */
-	if (nb_threads != 1) {
-		parse_task(nb_threads);
+	/* if nb_threads=1, makes the execution in sequential */
+	if (nb_threads == 1) {
+		work_t *task = tasks;
+		while (task) {
+			task->work(task->data);
+			task = task->next;
+		}
+		return 0;
 	}
+	/* if nb_threads!=0, makes the execution in parallel */
+	parse_task(nb_threads);
 	start = 1;
 	pthread_cond_broadcast(&cond);
 	
@@ -175,6 +182,13 @@ int expresso_wait(void){
 		task->work(task->data);
 		task = task->next;
 	}
+	
+	
+	/* reset state for next wait */
+	tasks = NULL;
+	task_count = 0;
+	tasks_per_thread = 0;
+	start = 0;
 	return 0;
 }
 

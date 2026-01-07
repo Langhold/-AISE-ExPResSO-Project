@@ -1,0 +1,68 @@
+\section{Introduction}
+
+La modélisation en 3 dimensions est devenue incontournable depuis des décennies. Elle est en effet présente dans différents domaines et a des applications variées comme l'animation, les jeux vidéos ou encore la simulation réaliste. Cette manière de représenter notre monde dans un cadre réaliste provient notamment de la simulation de trajectoires des photons.
+
+Pour ce projet, nous allons nous concentrer sur la technique du Path Tracing, combinant la technique du Ray Tracing, ainsi qu'une approche aléatoire pour résoudre des problèmes déterministes par la méthode de Monte-Carlo.
+
+\subsection{Qu'est-ce que le Path Tracing?}
+
+Le \textbf{Path Tracing} est une technique de rendu 3D se basant sur la méthode de Monte-Carlo pour approximer l'équation de transport de la lumière. Le principe est d'échantilloner aléatoirement un grand nombre de chemins lumineux entre la caméra et les différentes sources de lumière présentes dans la scène. Un exemple est présent dans le \hyperref[subsec:path_trac_1]{résultat~\ref*{subsec:path_trac_1}}.
+
+\subsubsection{Le Ray Casting}
+
+Le Path Tracing se base sur le \textbf{Ray Casting}. Le ray casting est une technique de rendu visuel qui a pour principe d'afficher des images avec une illusion de profondeur / 3D. Cette technique a été popularisée par le studio ID Software, qui l'a entre autre utilisé pour Wolfenstein 3D, DOOM et Quake. Elle fut souvent utilisée pour du temps réel, car elle était très peu coûteuse en termes de calcul pour les machines de l'époque.
+
+L'environnement est représenté de la manière suivante: une caméra, qui sert de point de vue à la manière d'un \oe il et une grille représentant notre environnement. À partir de la caméra, plusieurs rayons sont projetés aléatoirement. À chaque contact entre un rayon et une surface, nous effectuons une interpolation entre la position de la caméra et la position du pixel touché par l'un de nos rayons. Dès qu'un rayon atteint une surface, on calcule la distance du rayon et de la couleur du pixel atteint en fonction des propriétés de celle-ci. Plus la distance du rayon est grande, plus la surface est éloignée. Pour créer un effet de profondeur, nous calculons l'angle entre le rayon projeté et une surface. Plus l'angle est grand, plus l'effet de profondeur sera grand.
+
+Cette technique apporte quelques inconvénients, d'où le fait qu'elle soit utilisée en complément d'autres techniques de rendu. Elle ne permet pas d'effectuer du rendu sur des objets 3D complexes. Pour du temps réel, nous sommes limité sur une rotation par rapport à l'axe de Y. Nous ne pouvons pas faire du rendu volumétrique, i.e rendu d'un effet de flamme ou liquide.
+
+C'est pourquoi nous implémentons des propriétés supplémentaires au Ray Casting, tel que le principe de rendu avec la méthode de Monte Carlo, traité dans ce rapport.
+
+\subsection{Comparaison avec des technique existantes}
+
+
+\begin{itemize}
+\item[$\bullet$]\textbf{Rasterization}: technique de rendu 3D utilisée pour convertir des objets 3D en une image 2D affichable à l'écran. Elle fonctionne triangle par triangle plutôt que pixel par pixel. Très rapide, optimisée pour des scènes avec des millions de triangles et avec des exigences en temps-réel. Mais les ombres/éclairages indirects, réflexions complexes et phénomènes optiques réalistes restent approximatifs. 
+
+\item[$\bullet$] \textbf{Ray tracing }: lance des rayons partants de la caméra pour simuler les ombres, réflexions et occultations ne traitant alors pas toute la scène, mais uniquement les trajectoires des photons qui seront interceptés. Cela donne un rendu plus fidèle que le rasterizaton mais souvent limité à quelques rebonds ou approximations car plus coûteuse en temps et en énergie.
+
+\end{itemize}
+
+De nos jours, la technique de rendu la plus populaire est la rasterization. Bien que plus coûteuse en calcul, la rasterization demeure dominante dans les moteurs temps réel.
+
+\subsection{Limites du Path Tracing}
+
+Le Path-Tracing étant un modèle, il nous faut de poser des fonctionnements qui ne font pas diverger la simulation de la réalité. Les chemins lumineux parcourent un ligne droite entre chacuns des rebonds, sans que d'autres éléments puissent les perturber ; en particulier d'autres chemins lumineux ou un effet de brume ou fumée. De plus, les rayonnements ne font pas appel aux proriétées des ondes éléctromagnétiques qui sont connus pour les photons. D'autres effets spécifiques ne sont pas simulables, telles que la fluorescence ou la polarisation. Cependant ces limitations ne représentent pas une vraie limite du modèle, leur impact est mineur sur le rendu.
+
+Pour les limites liées à l'utilisation du Path-Tracing, il y a premièrement le problème de son implémentation pour un rendu en temps réel, le matériel nécessaire pour son implémentation est coûteux et donc le rendu devient dépendant de la capacité à traiter les images.
+
+Deuxièmement, une implémentation avec une grande quantité d'objets dans la scène, de rayons lumineux et de rebonds considérés demande également de fortes ressources matérielles. Le Path-Tracing comprend de plus un test pour d'éventuelles intersections de chemins lumineux, ce qui demande des performances, particulièrement pour des modèles 3D complexes.
+
+\subsection{Données utilisées}
+
+Il nous faut de poser les conditions dans lesquelles nous allons traiter le reste du projet. Tout d'abord, nous avons une technique de rendu 3D, c'est pourquoi l'ensemble des représentations d'objets se trouvent dans $\mathbb{R}^3$, nous posons avant tout trois vecteurs $\vec{r_0}, \vec{u_0}, \vec{d_0} \in \mathbb{R}^3$ comme la base canonique : $(\vec{r_0}, \vec{u_0}, \vec{d_0}) =
+\left(
+\left( \begin{smallmatrix} 1 \\ 0 \\ 0 \end{smallmatrix} \right),
+\left( \begin{smallmatrix} 0 \\ 1 \\ 0 \end{smallmatrix} \right),
+\left( \begin{smallmatrix} 0 \\ 0 \\ 1 \end{smallmatrix} \right)
+\right)$ ; ayant choisi visuellement : $\vec{r_0}$ pour "right", $\vec{u_0}$ pour "up" et $\vec{d_0}$ pour "direction" vers où nous pointons.
+
+Nous définissons ensuite toute norme utilisée comme la norme 2 euclidienne notée telle que :
+
+$\begin{array}{ccccc}
+\lVert \cdot \rVert & : & \mathbb{R}^3 & \to & \mathbb{R} \\
+ & & \begin{pmatrix} a_1 \\ a_2 \\ a_3 \end{pmatrix} & \mapsto & \sqrt{a_1^2+a_2^2+a_3^2} \end{array}$ \\ \\
+
+De même, le produit scalaire sera :
+
+$\begin{array}{ccccc}
+\cdot & : & \mathbb{R}^3, \mathbb{R}^3 & \to & \mathbb{R} \\
+& & \begin{pmatrix} a_1 \\ a_2 \\ a_3 \end{pmatrix} \cdot \begin{pmatrix} b_1 \\ b_2 \\ b_3 \end{pmatrix} & \mapsto & a_1 \, b_1 + a_2 \, b_2 + a_3 \, b_3 \end{array}$ \\ \\
+
+Finalement, le produit vectoriel est :
+
+$\begin{array}{ccccc}
+\cdot \wedge \cdot & : & \mathbb{R}^3, \mathbb{R}^3 & \to & \mathbb{R}^3 \\
+& & \begin{pmatrix} a_1 \\ a_2 \\ a_3 \end{pmatrix} \wedge \begin{pmatrix} b_1 \\ b_2 \\ b_3 \end{pmatrix} & \mapsto & \begin{pmatrix} a_2 \, b_3 - a_3 \, b_2 \\ a_1 \, b_3 - a_3 \, b_1 \\ a_1 \, b_2 - a_2 \, b_1 \end{pmatrix} \end{array}$
+
+\pagebreak

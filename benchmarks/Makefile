@@ -23,3 +23,4 @@ run: all
 
 clean:
 	rm -f $(TESTS)
+	rm -rf *.dSYM
